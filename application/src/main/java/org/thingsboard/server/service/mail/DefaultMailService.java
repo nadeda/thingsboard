@@ -463,20 +463,17 @@ public class DefaultMailService implements MailService {
             Template template = freemarkerConfig.getTemplate(templateLocation);
             return FreeMarkerTemplateUtils.processTemplateIntoString(template, model);
         } catch (Exception e) {
-            throw handleException(e);
+            log.warn("Failed to process mail template {}: {}", templateLocation, ExceptionUtils.getRootCauseMessage(e));
+            throw new ThingsboardException("Failed to process mail template", e, ThingsboardErrorCode.GENERAL);
         }
     }
 
-    protected ThingsboardException handleException(Exception exception) {
-        String message;
+    protected ThingsboardException handleException(Throwable exception) {
         if (exception instanceof NestedRuntimeException) {
-            message = ((NestedRuntimeException) exception).getMostSpecificCause().getMessage();
-        } else {
-            message = exception.getMessage();
+            exception = ((NestedRuntimeException) exception).getMostSpecificCause();
         }
-        log.warn("Unable to send mail: {}", message);
-        return new ThingsboardException(String.format("Unable to send mail: %s", message),
-                ThingsboardErrorCode.GENERAL);
+        log.warn("Unable to send mail: {}", exception.getMessage());
+        return new ThingsboardException("Unable to send mail", exception, ThingsboardErrorCode.GENERAL);
     }
 
 }
